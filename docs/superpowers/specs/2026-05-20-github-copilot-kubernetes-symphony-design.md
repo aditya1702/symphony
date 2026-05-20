@@ -210,6 +210,33 @@ Deferred hardening:
 - Autoscaling.
 - Fine-grained admission controls.
 
+## Deployment Target
+
+V1 deploys to the `wallet-eng-dev` Kubernetes namespace/environment managed in
+the kube repository at:
+
+```text
+/Users/adityavyas/Desktop/Work/kube/kube001-dev-eks/namespaces/wallet-eng-dev/
+```
+
+The implementation should follow the existing kustomize layout in that
+directory:
+
+- Add the Symphony manifest at `symphony/symphony.yaml`.
+- Add the new manifest path to
+  `kube001-dev-eks/namespaces/wallet-eng-dev/kustomization.yaml`.
+- Use ExternalSecrets/Vault for GitHub and Copilot credentials, matching the
+  existing `externalsecrets.yaml` pattern.
+- Use the existing single-replica controller style as a reference, especially
+  `freighter/oncall-triage.yaml`, while keeping Symphony's RBAC scoped to
+  Jobs, Pods, PVCs, pod logs, events, and named Secrets in `wallet-eng-dev`.
+- Keep local kubeconfig changes out of source control. Cluster access for
+  testing is an operator prerequisite, not a committed artifact.
+
+The first deployment target is dev only. Staging or production promotion should
+wait until the v1 workflow has completed real disposable issues successfully in
+`wallet-eng-dev`.
+
 ## Error Handling And Safety
 
 Startup validates:
