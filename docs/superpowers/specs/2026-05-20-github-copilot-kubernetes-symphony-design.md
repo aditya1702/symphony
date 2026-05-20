@@ -89,6 +89,8 @@ runner:
   plan_reviewer_model: gpt-5.5
   implementation_model: claude-sonnet-4.6
   reasoning_effort: xhigh
+  post_plan_comment: true
+  post_plan_review_comment: true
 ```
 
 The Markdown body supplies the worker prompt template. It should describe the
@@ -123,6 +125,8 @@ The worker owns workflow writes:
 
 - Create/update branches and PRs.
 - Maintain issue workpad comments.
+- Post the planning artifact to the original GitHub issue as Markdown.
+- Post the plan-review findings to the original GitHub issue as Markdown.
 - Respond to PR review comments.
 - Attach validation evidence.
 - Move or annotate human handoff states when the workflow prompt requires it.
@@ -157,6 +161,17 @@ The one-pod pipeline runs stages in order:
 2. Plan review with `gpt-5.5`.
 3. Implementation with the configured Sonnet model.
 4. Validation and PR handoff according to `WORKFLOW.md`.
+
+After the planning stage, the worker posts the plan draft to the original
+GitHub issue as Markdown. After the review stage, it posts the GPT-5.5 review
+findings to the same issue as Markdown. These comments are operator visibility
+artifacts; the PVC remains the durable source of run artifacts.
+
+Issue comments must be idempotent within a run attempt. The worker should use
+hidden markers such as `<!-- symphony:plan:<attempt-id> -->` and
+`<!-- symphony:plan-review:<attempt-id> -->` so a retry or revised stage can
+update the matching comment instead of creating duplicates. A later attempt may
+create a new pair of comments when that makes the retry history clearer.
 
 The worker writes artifacts into the PVC under a stable directory such as
 `/workspace/.symphony/`:
@@ -266,6 +281,8 @@ V1 acceptance criteria:
 - A per-issue PVC is created or reused.
 - A worker Job is created.
 - The worker runs the three configured model stages.
+- The worker posts the plan and plan-review findings to the original GitHub
+  issue as Markdown comments.
 - Logs and artifacts are captured.
 - Symphony releases, retries, or blocks the item deterministically.
 
